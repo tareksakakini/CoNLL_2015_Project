@@ -1,120 +1,69 @@
-def ImplicitArgumentDistanceCheck(inputDictOriginal):
-	inputDict = inputDictOriginal
-	yes = 0
-	no = 0
-	connec = defaultdict(int)
-	for keys in inputDict:
-		endArg1 = keys["Arg1"]["CharacterSpanList"][-1][1]
-		startArg2 = keys["Arg2"]["CharacterSpanList"][0][0]
-		if startArg2>endArg1:
-			no += 1
-		else:
-			yes += 1
-			if (yes==1):
-				print keys
-			connec[keys["Connective"]["RawText"]]+=1
-	print yes
-	print no
-	print connec
-
-
-
-
-def DictToDist(inputDictOriginal):
-        sum=0
-	inputDict = inputDictOriginal
-        for keys in inputDict:
-                sum+=inputDict[keys]
-        for keys in inputDict:
-                #print inputDict[keys]
-                inputDict[keys]=float(inputDict[keys])/sum
-                #print inputDict[keys]
-	
-	inputDict = sorted(inputDict.items(),key=operator.itemgetter(1),reverse=True)
-
-        return inputDict
-
-def readFile(path):
-	temp = open(path,'r')
-	temp_list = []
-	for lines in temp:
-		temp_list.append(json.loads(lines))
-	temp.close()
-	return temp_list
-
-def getDictConn(inputList):
-	Dict_Conn = {}
-	for i in inputList:
-		if (Dict_Conn.get(i["Connective"]["RawText"])!=Dict_Conn.get("aha")):
-			Dict_Conn[i["Connective"]["RawText"]]+=1
-		else:
-			Dict_Conn[i["Connective"]["RawText"]]=1
-	return Dict_Conn
-
-def getDictType(inputList):
-        Dict_Type = {}
-        for i in inputList:
-                if (Dict_Type.get(i["Type"])!=Dict_Type.get("aha")):
-                        Dict_Type[i["Type"]]+=1
-                else:
-                        Dict_Type[i["Type"]]=1
-        return Dict_Type
-
-
-def getDictSense(inputList):
-	Dict_Sense = {}
-	for i in inputList:
-		if (Dict_Sense.get(tuple(i["Sense"]))!=Dict_Sense.get("aha")):
-			Dict_Sense[tuple(i["Sense"])]+=1
-		else:
-			Dict_Sense[tuple(i["Sense"])]=1
-	return Dict_Sense
-
-
-def readArticles():
-	Articles = ['' for i in range(0,2300)]
-	for i in range(200,2000):
-		if i<1000:
-			Path_Completion = 'wsj_0'+str(i)
-		else:
-			Path_Completion = 'wsj_'+str(i)
-		path = '../../conll15st_data/raw_train/' + Path_Completion
-		f=open(path,'r')
-		Articles[i]=f.read()
-	for i in range(2100,2200):
-		Path_Completion = 'wsj_'+str(i)
-                path = '../../conll15st_data/raw_train/' + Path_Completion
-                f=open(path,'r')
-                Articles[i]=f.read()
-	for i in range(2200,2300):
-                Path_Completion = 'wsj_'+str(i)
-                path = '../../conll15st_data/raw_dev/' + Path_Completion
-                f=open(path,'r')
-                Articles[i]=f.read()
-	return Articles
-
-
 import json
 import operator
 from collections import defaultdict
+import gensim
+import os
+
+import Functions
+
+model = gensim.models.word2vec.Word2Vec.load_word2vec_format(os.path.join(os.path.dirname('../../Word2VecTool/'), 'GoogleNews-vectors-negative300.bin'), binary=True)
 
 print "Oh yea"
 
 Debug_Read_PDTB_Data = False
 Debug_Read_Articles = False
 
-pdtb_dev_list = readFile('../../conll15st_data/pdtb-data-01-20-15-dev.json')
-n=0
-for keys in pdtb_dev_list:
-	if((n<5)&(keys["Sense"][0]=="Comparison.Contrast")):
-		print "Arg1:"
-		print keys["Arg1"]["RawText"]
-		print "Arg2:"
-		print keys["Arg2"]["RawText"]
-		n+=1
-fout = open('Output','w')
+
+pdtb_dev_list = Functions.readFile('../../conll15st_data/pdtb-data-01-20-15-dev.json')
+#DocID =  pdtb_dev_list[0]["DocID"]
+#Arg1 = pdtb_dev_list[0]["Arg1"]
+#Arg2 = pdtb_dev_list[0]["Arg2"]
+
+parses=Functions.ReadParse('../../conll15st_data/pdtb-parses-01-12-15-dev.json')
+#print parses[DocID]["sentences"][0]["words"]#["dependencies"][0][:]
+
+#Offsets = Functions.BuildOffsets(parses,DocID)
+#print Functions.ReturnVerb(Arg1,Offsets)
+
+def printArgs(pdtb_list, parses):
+	DistAv = defaultdict(int)
+	DistAv["Expansion"]=[0]
+	DistAv["Temporal"]=[0]
+	DistAv["Contingency"]=[0]
+	DistAv["Comparison"]=[0]
+	
+	for i in pdtb_list:
+		Sense = i["Sense"][0].split('.')[0]
+		DocID = i["DocID"]
+		Arg1 = i["Arg1"]
+		Arg2 = i["Arg2"]
+		Offsets = Functions.BuildOffsets(parses,DocID)
+		verb1 = Functions.ReturnVerb(Arg1,Offsets)
+		verb2 = Functions.ReturnVerb(Arg2,Offsets)
+		if ((verb1 in model)&(verb2 in model)):
+			sim = model.similarity(verb1,verb2)
+		else:
+			sim = 0
+		if ((Sense in DistAv)&(sim!=0)):
+			DistAv[Sense].append(sim)
+	for key in DistAv:
+		print key, float(sum(DistAv[key]))/float(len(DistAv[key])-1)
+			
+
+printArgs(pdtb_dev_list,parses)
 
 if Debug_Read_PDTB_Data:
+	pdtb_dev_list = readFile('../../conll15st_data/pdtb-data-01-20-15-dev.json')
+	n=0
+	for keys in pdtb_dev_list:
+		if((n<5)&(keys["Sense"][0]=="Comparison.Contrast")):
+			print "Arg1:"
+			print keys["Arg1"]["RawText"]
+			print "Arg2:"
+			print keys["Arg2"]["RawText"]
+			n+=1
+	fout = open('Output','w')
+
 	pdtb_dev_list = readFile('../../conll15st_data/pdtb-data-01-20-15-dev.json')
 	pdtb_train_list = readFile('../../conll15st_data/pdtb-data-01-20-15-train.json')
 
@@ -145,3 +94,6 @@ if Debug_Read_PDTB_Data:
 
 if Debug_Read_Articles:
 	articles = readArticles()
+
+
+
