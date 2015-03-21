@@ -1,0 +1,7 @@
+{"Arg1": {"RawText": "this function returns null . "}, "Arg2": {"RawText": "there is no element with the given id , "}}
+{"Arg1": {"RawText": "If there is no element with the given id , this function returns null . "}, "Arg2": {"RawText": "Note also that the DOM implementation must have information that says which attributes are of type ID . "}}
+{"Arg1": {"RawText": "OK . "}, "Arg2": {"RawText": "one needs to insert the element first into the document tree with insertBefore or a similar method , probably into a hidden div . "}}
+{"Arg1": {"RawText": "Note also that the DOM implementation must have information that says which attributes are of type ID . "}, "Arg2": {"RawText": "Attributes with the name `` id '' are not of type ID unless so defined in the document 's DTD . "}}
+{"Arg1": {"RawText": "Attributes with the name `` id '' are not of type ID unless so defined in the document 's DTD . "}, "Arg2": {"RawText": "The id attribute is defined to be of ID type in the common cases of XHTML , XUL , and other . "}}
+{"Arg1": {"RawText": "The id attribute is defined to be of ID type in the common cases of XHTML , XUL , and other . "}, "Arg2": {"RawText": "Implementations that do not know whether attributes are of type ID or not are expected to return null . "}}
+{"Arg1": {"RawText": "Simply creating an element and assigning an ID will not make the element accessible by getElementById . "}, "Arg2": {"RawText": "OK . "}}
