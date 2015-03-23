@@ -13,7 +13,7 @@ def ParseOutput(input_path, conll_format, rawInput):
 			if k[0]=='{':
 				key = k[1:].split('_')
 				if len(key)>=3:
-					Collector[(key[0],key[1],key[2])]={"TokenList": []}
+					Collector[(key[0],key[1],key[2])]={"TokenList": [], "RawText": ""}
 					if len(key)>3:
 						Output[(key[0],key[1],"Sense")] = [key[3]]
 			elif k[-1]=='}':
@@ -25,11 +25,12 @@ def ParseOutput(input_path, conll_format, rawInput):
 				j+=1
 				for (n,keys) in enumerate(Collector):
 					Collector[keys]["TokenList"].append(j)
+					Collector[keys]["RawText"]+=k+" "
 					
 
 	jsonDict = defaultdict(int)
 
-	sortedOutput = OrderedDict(sorted(Output.items(), key=lambda t: t[0]))
+	sortedOutput = OrderedDict(sorted(Output.items(), key=lambda t: (t[0],t[1])))
 
 	temp_keys = ("bla","bla")
 	i=-1			
@@ -61,7 +62,7 @@ def ParseOutput(input_path, conll_format, rawInput):
 
 def ParseRaw(input_path, output_path):
 
-	os.system("../../pdtb-parser/src/parse.rb "+ input_path +" > " + output_path)
+	os.system("../../../pdtb-parser/src/parse.rb "+ input_path +" > " + output_path)
 
 import json
 import os
@@ -75,6 +76,6 @@ outputFile = open('./conll_format','w')
 for i in range(2200,2201):
 	print i
 	ID = "%04d" %(i)
-	rawInput = '../../../conll15st_data/raw_dev/wsj_'+ID
+	rawInput = '/media/training-datasets/shallow-discourse-parsing/conll15-st-dev-2015-03-04/raw/wsj_'+ID
 	ParseRaw(rawInput,tempPath)
 	ParseOutput(tempPath, outputFile, rawInput)
